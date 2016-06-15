@@ -8,18 +8,18 @@ static void print(const char* data, size_t data_length)
 	for ( size_t i = 0; i < data_length; i++ )
 		putchar((int) ((const unsigned char*) data)[i]);
 }
-static void print_int(unsigned long a){
+static void print_int(int a){
 	if (a / 10 != 0)
 		print_int(a / 10);
 	putchar((char) ('0' + (a % 10)));
 }
-static void print_hex(unsigned long a){
+static void print_hex(int a){
 	if (a / 16 != 0)
-		print_hex(a / 16);
+		print_int(a / 16);
 	if (a % 16 < 10)
 		putchar((char) ('0' + (a % 16)));
 	else 
-		putchar((char) ('A' + (a % 16) - 10));
+		putchar((char) ('A' + (a % 16) - 10)));
 }
 int printf(const char* restrict format, ...)
 {
@@ -66,13 +66,13 @@ int printf(const char* restrict format, ...)
 		else if ( *format == 'd' )
 		{
 			format++;
-			print_int(va_arg(parameters, unsigned int));
+			print_int(va_arg(parameters, int));
 		}
 		else if ( *format == 'X' )
 		{
 			format++;
 			print("0x",2);
-			print_hex(va_arg(parameters, unsigned int));
+			print_hex(va_arg(parameters, int));
 		}
 		else if ( *format == 's' )
 		{

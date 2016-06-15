@@ -61,7 +61,7 @@ void scroll(){
 	}
 	for(int j=0;j < VGA_WIDTH;j++){
 			size_t index = (VGA_HEIGHT-1) * VGA_WIDTH + j;
-			terminal_buffer[index] = make_vgaentry(' ', terminal_color);
+			terminal_buffer[index] = terminal_buffer[index1];
 		}
 }
 void terminal_putchar(char c)

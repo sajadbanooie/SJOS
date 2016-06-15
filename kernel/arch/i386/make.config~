@@ -13,9 +13,3 @@ $(ARCHDIR)/idt.o \
 $(ARCHDIR)/idt_asm.o \
 $(ARCHDIR)/isr.o \
 $(ARCHDIR)/isr_asm.o \
-$(ARCHDIR)/irq.o \
-$(ARCHDIR)/irq_asm.o \
-$(ARCHDIR)/memory.o \
-$(ARCHDIR)/user_mode_asm.o \
-$(ARCHDIR)/user_mode.o \
-$(ARCHDIR)/ata_pio.o \

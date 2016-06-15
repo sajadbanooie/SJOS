@@ -69,8 +69,6 @@ clean:
 
 install: install-headers install-kernel
 
-help:
-	@echo sajad os
 install-headers:
 	mkdir -p $(DESTDIR)$(INCLUDEDIR)
 	cp -RTv include $(DESTDIR)$(INCLUDEDIR)

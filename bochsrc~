@@ -1,7 +1,0 @@
-
-# CD-ROM image
-ata0-slave: type=disk, path=sjos.iso, mode=flat
-ata0-master:  type=cdrom, path="sjos.iso", status=inserted
-boot: cdrom
- log: bochsout.txt
-display_library: x, options="gui_debug"

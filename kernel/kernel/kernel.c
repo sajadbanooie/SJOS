@@ -13,6 +13,7 @@
 #include <kernel/memory.h>
 #include <kernel/user_mode.h>
 #include <kernel/ata_pio.h>
+#include <kernel/paging.h>
 
 void keyboard_handler(struct regs *r)
 {
@@ -33,12 +34,16 @@ void kernel_early(multiboot_info_t *multiboot_info)
 	init_memory_manager(multiboot_info, &kernel_end);
 	install_tss();
 	irq_install_handler(1,keyboard_handler);
-	ata_init();
+	// ata_init();
+	init_virtual_memory();
 }
 
 void kernel_main(void)
 {
 	
 	//switch_to_usermode();
+	// alloc_blocks(2);
+	// void *a = alloc_blocks(1024);
+	// printf("%X",a);
 	for (;;);
 }

@@ -12,7 +12,7 @@ uint32_t	memory_size=0;
 uint32_t	used_blocks=0;
  
 //! maximum number of available memory blocks
-uint32_t	max_blocks=0;
+uint32_t	max_blocks=1048576;
  
 //! memory map bit array. Each bit represents a memory block
 uint32_t*	memory_bit_map= 0;
@@ -46,18 +46,18 @@ int mmap_first_frees(size_t size){
         if (memory_bit_map[i] != 0){
             for (int j = 0;j<32;j++){
                 int x = ((memory_bit_map[i] & (1 << j)));
-                if (x != 0){
+                if (x != 0)
                     n++;
-                }
-                
+                if (x == 0)
+                    n = 1;
                 if (n == 1)
-                    block = i*32+j;
-                if (x==0)
-                    n = 0;
+                    block = (i * 32 + j);
                 if (n == size)
                     break;
             }
         }
+        if (n == size)
+            break;
     }
     return block;
 }
@@ -81,7 +81,6 @@ void* alloc_block(){
 }
 void* alloc_blocks(size_t size){
     int block = mmap_first_frees(size);
-    printf("block: %d ",block);
     if (block >= 0){
         for (int i=0;i<size;i++)
             mmap_set_bit(block + i);
@@ -95,15 +94,21 @@ void free_block(void *p){
     int block = (int) p / 4096;
     mmap_unset_bit(block);
 }
+void free_blocks(void *p,size_t size){
+    int block = (int) p / 4096;
+    for (int i=0;i<size;i++)
+            mmap_unset_bit(block + i);
+    
+}
 void init_memory_manager(multiboot_info_t *multiboot_info, uint32_t kernel_end){
-    memory_size = multiboot_info->mem_lower | (multiboot_info->mem_upper * 64);
+    memory_size = multiboot_info->mem_lower + (multiboot_info->mem_upper);
     max_blocks = memory_size * 1024 / 4096;
-    printf("%d\n", memory_size);
+    printf("%d\n", memory_size * 1024);
     memory_map = (memory_map_t *) (multiboot_info->mmap_addr);
     printf("%X\n",memory_map);
     memory_bit_map = kernel_end + 1;
     memset(memory_bit_map, 0, max_blocks/8);
-    
+   
     while (memory_map < multiboot_info->mmap_addr + multiboot_info->mmap_length){
         int start = (memory_map->base_addr_high * 64) | (memory_map->base_addr_low);
         int len = (memory_map->length_high * 64) | (memory_map->length_low);

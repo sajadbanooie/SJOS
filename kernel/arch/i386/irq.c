@@ -66,7 +66,7 @@ void irq_remap(void)
     io_wait();
     write_port(0xA1, 0x01);
     io_wait();
-    write_port(0x21, 0x0);
+    write_port(0x21, 0);
     write_port(0xA1, 0x0);
     ok();
 }

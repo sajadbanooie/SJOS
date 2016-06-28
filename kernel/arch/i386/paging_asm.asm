@@ -9,6 +9,6 @@ enable_paging:
     ret
 
 set_page_dir:
-    mov eax,p_dir
+    mov eax,[p_dir]
     mov cr3,eax
     ret

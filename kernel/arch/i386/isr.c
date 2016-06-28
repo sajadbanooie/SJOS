@@ -121,7 +121,7 @@ void isr_handler(struct regs *r){
         /* Display the description for the Exception that occurred.
         *  In this tutorial, we will simply halt the system using an
         *  infinite loop */
-	printf("%X\n",r->err_code);
+	    printf("%X\n",r->err_code);
         error(exception_messages[r->int_no]);
         
         //for (;;);

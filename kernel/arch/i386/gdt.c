@@ -27,13 +27,12 @@ void install_tss(void){
 	TSS.ss0 = 0x10;
 	TSS.esp0 = &stack_top;
 	
-	TSS.cs=0x0b;
-	TSS.ss = 0x13;
-	TSS.es = 0x13;
-	TSS.ds = 0x13;
-	TSS.fs = 0x13;
-	TSS.gs = 0x13;
-
+	// TSS.cs=0x0b;
+	// TSS.ss = 0x13;
+	// TSS.es = 0x13;
+	// TSS.ds = 0x13;
+	// TSS.fs = 0x13;
+	// TSS.gs = 0x13;
 
 	//! flush tss
 	settss ();

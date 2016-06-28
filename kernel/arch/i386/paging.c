@@ -12,31 +12,32 @@
 #define PAGE_TABLE_INDEX(x) (((x) >> 12) & 0x3ff)
 #define PAGE_GET_PHYSICAL_ADDRESS(x) (*x & ~0xfff)
 
-extern set_page_dir(void);
-extern enable_paging(void);
-page_dir p_dir;
 
-void init_virtual_memory(void){
-    memset(p_dir, 0, 4094);
+void init_virtual_memory(uint32_t kernel_end){
+    p_dir = (uint32_t *) alloc_block();
+    printf("page dir :%X ",p_dir);
+    memset(p_dir, 0, 4096);
     for (int i = 0;i<1024;i++){
-        page_table *table = (page_table *) alloc_block();
-        memset(table, 0, 4094);
-        p_dir[i].address = (uint32_t) table / PAGE_SIZE;
-        p_dir[i].rw = 1;
-        p_dir[i].present = 1;
+        uint32_t *table = (uint32_t *) alloc_block();
+        memset(table, 0, 4096);
+        if (i == 0)
+            printf("table %X ",((uint32_t) table / 4096) << 12);
+        p_dir[i] |= ((uint32_t) table / 4096) << 12;
+        p_dir[i] |= 0x2;
+        p_dir[i] |= 1;
     }
-    for (int i = 0;i < 0x10000;i += PAGE_SIZE){
+    printf("%X ",p_dir[0]);
+    for (int i = 0;i <=kernel_end;i++){
         map_page(i,i);
     }
     set_page_dir();
     
-    write_port_w(0x8A00,0x8A00); write_port_w(0x8A00,0x08AE0);
+    // write_port_w(0x8A00,0x8A00); write_port_w(0x8A00,0x08AE0);
     enable_paging();
     
 }
 void map_page(uint32_t v,uint32_t p){
-    page_table *table = p_dir[PAGE_DIRECTORY_INDEX(v)].address * PAGE_SIZE;
-    table[PAGE_TABLE_INDEX(v)]->address = p / PAGE_SIZE;
-    table[PAGE_TABLE_INDEX(v)]->present = 1;
-    table[PAGE_TABLE_INDEX(v)]->rw = 1;
+    uint32_t *table = (uint32_t *) ((p_dir[PAGE_DIRECTORY_INDEX(v)] & 0xFFFFFF000)) ;
+    table[PAGE_TABLE_INDEX(v)] |= (p / 4096) << 12;
+    table[PAGE_TABLE_INDEX(v)] |= 1;
 }

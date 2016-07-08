@@ -1,5 +1,5 @@
-#ifndef _KERNEL_GDT_H
-#define _KERNEL_GDT_H
+#ifndef _KERNEL_USERMODE_H
+#define _KERNEL_USERMODE_H
 
 #include <stddef.h>
 

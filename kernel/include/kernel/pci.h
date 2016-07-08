@@ -1,5 +1,5 @@
-#ifndef _KERNEL_ISR_H
-#define _KERNEL_ISR_H
+#ifndef _KERNEL_PCI_H
+#define _KERNEL_PCI_H
 
 #include <stddef.h>
 

@@ -37,6 +37,7 @@ int mmap_first_free(){
             }
         }
     }
+
     return -1;
 }
 int mmap_first_frees(size_t size){
@@ -84,7 +85,7 @@ void* alloc_blocks(size_t size){
     if (block >= 0){
         for (int i=0;i<size;i++)
             mmap_set_bit(block + i);
-        return 4096 * block;
+        return (void *) (4096 * block);
         
     }
     return -1;

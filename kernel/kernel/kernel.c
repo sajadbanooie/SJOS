@@ -16,6 +16,7 @@
 #include <kernel/paging.h>
 #include <kernel/pci.h>
 
+
 void keyboard_handler(struct regs *r)
 {
 	unsigned char scancode;
@@ -44,7 +45,7 @@ void kernel_early(multiboot_info_t *multiboot_info)
 void kernel_main(void)
 {
 	
-	// switch_to_usermode();
+//	 switch_to_usermode();
 	// alloc_blocks(2);
 	// void *a = alloc_blocks(1024);
 	// printf("%X",a);

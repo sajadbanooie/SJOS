@@ -15,18 +15,14 @@
 
 void init_virtual_memory(uint32_t kernel_end){
     p_dir = (uint32_t *) alloc_block();
-    printf("page dir :%X ",p_dir);
     memset(p_dir, 0, 4096);
     for (int i = 0;i<1024;i++){
         uint32_t *table = (uint32_t *) alloc_block();
         memset(table, 0, 4096);
-        if (i == 0)
-            printf("table %X ",((uint32_t) table / 4096) << 12);
         p_dir[i] |= ((uint32_t) table / 4096) << 12;
         p_dir[i] |= 0x2;
         p_dir[i] |= 1;
     }
-    printf("%X ",p_dir[0]);
     for (int i = 0;i <=kernel_end;i++){
         map_page(i,i);
     }

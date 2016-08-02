@@ -23,7 +23,7 @@ void keyboard_handler(struct regs *r)
 
     /* Read from the keyboard's data buffer */
     scancode = read_port(0x60);
-	printf("%X ",scancode);
+	printk("%X ", scancode);
 }
 extern uint32_t kernel_end;
 void kernel_early(multiboot_info_t *multiboot_info)
@@ -33,21 +33,21 @@ void kernel_early(multiboot_info_t *multiboot_info)
 	init_idt();
 	init_isrs();
 	init_irq();
-	init_memory_manager(multiboot_info, &kernel_end);
-	init_virtual_memory(&kernel_end);
+	init_memory_manager(multiboot_info, (uint32_t) &kernel_end);
+	init_virtual_memory((uint32_t) &kernel_end);
 
 	install_tss();
 	irq_install_handler(1,keyboard_handler);
-	ata_init();
-	init_pci();
+
 }
 
 void kernel_main(void)
 {
-	
+	ata_init();
+	init_pci();
 //	 switch_to_usermode();
 	// alloc_blocks(2);
 	// void *a = alloc_blocks(1024);
-	// printf("%X",a);
+	// printk("%X",a);
 	for (;;);
 }

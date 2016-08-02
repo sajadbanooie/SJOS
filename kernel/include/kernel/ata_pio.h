@@ -6,11 +6,11 @@
 struct ata_device{
 	uint8_t type;
 	uint32_t sector_size;
-	char serialnumber[10];
-	char frim_rev[4];
-	char model[20];
+	char serialnumber[21];
+	char frim_rev[11];
+	char model[41];
 	// uint32_t size;
-	uint8_t bus;
+	uint16_t bus;
 	uint8_t drive;
 	uint32_t sector_count;
 	uint8_t status;

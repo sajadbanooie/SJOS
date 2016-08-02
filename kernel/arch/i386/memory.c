@@ -1,7 +1,6 @@
 #include <kernel/tty.h>
 #include <kernel/multiboot.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 #include <kernel/memory.h>
 
@@ -75,10 +74,10 @@ void* alloc_block(){
     int block = mmap_first_free();
     if (block >= 0){
         mmap_set_bit(block);
-        return 4096 * block;
+        return (void *) (4096 * block);
         
     }
-    return -1;
+    return NULL;
 }
 void* alloc_blocks(size_t size){
     int block = mmap_first_frees(size);
@@ -88,7 +87,7 @@ void* alloc_blocks(size_t size){
         return (void *) (4096 * block);
         
     }
-    return -1;
+    return NULL;
 }
 
 void free_block(void *p){
@@ -104,21 +103,21 @@ void free_blocks(void *p,size_t size){
 void init_memory_manager(multiboot_info_t *multiboot_info, uint32_t kernel_end){
     memory_size = multiboot_info->mem_lower + (multiboot_info->mem_upper);
     max_blocks = memory_size * 1024 / 4096;
-    printf("%d\n", memory_size * 1024);
+    printk("%d\n", memory_size * 1024);
     memory_map = (memory_map_t *) (multiboot_info->mmap_addr);
-    printf("%X\n",memory_map);
-    memory_bit_map = kernel_end + 1;
+    printk("%X\n", memory_map);
+    memory_bit_map = (uint32_t *) (kernel_end + 1);
     memset(memory_bit_map, 0, max_blocks/8);
    
-    while (memory_map < multiboot_info->mmap_addr + multiboot_info->mmap_length){
+    while (memory_map < (memory_map_t *) (multiboot_info->mmap_addr + multiboot_info->mmap_length)){
         int start = (memory_map->base_addr_high * 64) | (memory_map->base_addr_low);
         int len = (memory_map->length_high * 64) | (memory_map->length_low);
         if (memory_map->type == 1)
             init_region(start, len);
-        printf("start: %d length: %d type: %d ",start,len,memory_map->type);
+        printk("start: %d length: %d type: %d ", start, len, memory_map->type);
         memory_map = (memory_map_t*) ( (unsigned int)memory_map +memory_map->size + sizeof(unsigned int) );
     }
 
-    dinit_region(0x100000, kernel_end + max_blocks/8);
-    printf("fist free block: %d\n", mmap_first_free());
+    dinit_region(0, kernel_end + max_blocks/8);
+    printk("fist free block: %d\n", mmap_first_free());
 }

@@ -4,15 +4,15 @@ project(sjos)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(SOURCE_FILES
-    kernel/arch/i386/ata_pio.c
+        kernel/kernel/ata_pio.c
     kernel/arch/i386/gdt.c
     kernel/arch/i386/idt.c
     kernel/arch/i386/irq.c
     kernel/arch/i386/isr.c
     kernel/arch/i386/memory.c
     kernel/arch/i386/paging.c
-    kernel/arch/i386/pci.c
-    kernel/arch/i386/tty.c
+        kernel/kernel/pci.c
+        kernel/kernel/tty.c
     kernel/arch/i386/user_mode.c
     kernel/include/kernel/ata_pio.h
     kernel/include/kernel/gdt.h
@@ -40,7 +40,7 @@ set(SOURCE_FILES
     libc/string/memcpy.c
     libc/string/memmove.c
     libc/string/memset.c
-    libc/string/strlen.c)
+    libc/string/strlen.c kernel/kernel/dma.c kernel/include/kernel/dma.h)
 
 include_directories(.)
 include_directories(kernel/include)

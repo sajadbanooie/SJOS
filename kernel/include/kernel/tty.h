@@ -12,5 +12,6 @@ void log_error(const char* data, const char* tag);
 void error(const char* data);
 void ok(void);
 void fail(void);
+int printk(const char *restrict format, ...);
 
 #endif

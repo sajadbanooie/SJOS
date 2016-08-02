@@ -2,9 +2,11 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <kernel/vga.h>
 #include <kernel/portio.h>
+#include <stdlib.h>
 
 size_t terminal_row;
 size_t terminal_column;
@@ -13,7 +15,7 @@ uint16_t* terminal_buffer;
 
 void update_cursor(int row, int col)
  {
-    unsigned short position=(row*80) + col;
+    unsigned short position= (unsigned short) ((row * 80) + col);
  
     write_port(0x3D4, 0x0F);
     write_port(0x3D5, (unsigned char)(position&0xFF));
@@ -112,14 +114,14 @@ void error(const char* data){
 	abort();
 }
 void log_info(const char* data, const char* tag){
-	terminal_color = make_color(COLOR_LIGHT_CYAN, COLOR_BLACK);	
+	terminal_color = make_color(COLOR_LIGHT_CYAN, COLOR_BLACK);
 	terminal_writestring(tag);
 	terminal_writestring(" [info]: ");
 	terminal_writestring(data);
 	terminal_color = make_color(COLOR_LIGHT_GREY, COLOR_BLACK);
 }
 void ok(void){
-	terminal_color = make_color(COLOR_GREEN, COLOR_BLACK);	
+	terminal_color = make_color(COLOR_GREEN, COLOR_BLACK);
 	terminal_writestring(" ok.\n");
 	terminal_color = make_color(COLOR_LIGHT_GREY, COLOR_BLACK);
 }
@@ -127,4 +129,92 @@ void fail(void){
 	terminal_color = make_color(COLOR_RED, COLOR_BLACK);	
 	terminal_writestring(" fail.\n");
 	terminal_color = make_color(COLOR_LIGHT_GREY, COLOR_BLACK);
+}
+
+static void print(const char* data, size_t data_length)
+{
+	for ( size_t i = 0; i < data_length; i++ )
+		terminal_putchar((int) ((const unsigned char*) data)[i]);
+}
+static void print_int(unsigned long a){
+	if (a / 10 != 0)
+		print_int(a / 10);
+	terminal_putchar((char) ('0' + (a % 10)));
+}
+static void print_hex(unsigned long a){
+	if (a / 16 != 0)
+		print_hex(a / 16);
+	if (a % 16 < 10)
+		terminal_putchar((char) ('0' + (a % 16)));
+	else
+		terminal_putchar((char) ('A' + (a % 16) - 10));
+}
+int printk(const char *restrict format, ...)
+{
+	va_list parameters;
+	va_start(parameters, format);
+
+	int written = 0;
+	size_t amount;
+	bool rejected_bad_specifier = false;
+
+	while ( *format != '\0' )
+	{
+		if ( *format != '%' )
+		{
+			print_c:
+			amount = 1;
+			while ( format[amount] && format[amount] != '%' )
+				amount++;
+			print(format, amount);
+			format += amount;
+			written += amount;
+			continue;
+		}
+
+		const char* format_begun_at = format;
+
+		if ( *(++format) == '%' )
+			goto print_c;
+
+		if ( rejected_bad_specifier )
+		{
+			incomprehensible_conversion:
+			rejected_bad_specifier = true;
+			format = format_begun_at;
+			goto print_c;
+		}
+
+		if ( *format == 'c' )
+		{
+			format++;
+			char c = (char) va_arg(parameters, int /* char promotes to int */);
+			print(&c, sizeof(c));
+		}
+		else if ( *format == 'd' )
+		{
+			format++;
+			print_int(va_arg(parameters, unsigned int));
+		}
+		else if ( *format == 'X' )
+		{
+			format++;
+			print("0x",2);
+			print_hex(va_arg(parameters, unsigned int));
+		}
+		else if ( *format == 's' )
+		{
+			format++;
+			const char* s = va_arg(parameters, const char*);
+			print(s, strlen(s));
+		}
+		else
+		{
+			goto incomprehensible_conversion;
+		}
+	}
+
+	va_end(parameters);
+
+	return written;
 }

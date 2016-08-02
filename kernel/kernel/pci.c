@@ -7,6 +7,7 @@
 #include <kernel/isr.h>
 #include <kernel/irq.h>
 #include <kernel/pci.h>
+#include <kernel/tty.h>
 
 #define CONFIG_ADDRESS 0xCF8
 #define CONFIG_DATA 0xCFC
@@ -20,6 +21,6 @@ uint32_t pci_config_read_dword (uint8_t bus, uint8_t device,uint8_t func, uint8_
 
 void init_pci(void){
     for (int i = 0;i<32;i++)
-        printf("%X ",pci_config_read_dword(0,i,0,8));
+        printk("%X ",pci_config_read_dword(0,i,0,8));
 }
 

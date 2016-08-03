@@ -59,6 +59,8 @@ uint32_t atapi_get_sector_size(uint16_t bus,uint8_t drive);
 
 void ata_select_delay(uint16_t bus);
 
+int atapi_write(struct ata_device *pDevice, uint16_t *pInt, int lba, int count);
+
 void ata_IDENTIFY(struct ata_device *atad){
     union identify{
         uint16_t identify_w[256];
@@ -158,57 +160,6 @@ void ata_IDENTIFY(struct ata_device *atad){
 	// while ((res = read_port(ATA_CMD + bus)) & 0x88);
 	ata_release();
 }
-uint8_t atapi_read(struct ata_device *atad,uint16_t *buffer,int LBA,int count){
-	ata_grab();
-    uint16_t bus = atad->bus;
-    uint8_t drive = atad->drive;
-    uint32_t sector_size = atad->sector_size;
-	uint8_t atapi_packet[12] = {0xA8,0,0,0,0,0,0,0,0,0,0,0};
-	write_port(ATA_DRIVE + bus, (uint8_t) (0xA0 + drive));
-	ata_select_delay(bus);
-	write_port(ATA_INFO + bus,0);
-
-	write_port(ATA_LBA_MID + bus, (uint8_t) (sector_size * count & 0xff));
-	write_port(ATA_LBA_HI + bus, (uint8_t) (sector_size * count >> 8 & 0xff));
-	write_port(ATA_CMD + bus, 0xA0);
-	int res = read_port(ATA_CMD + bus);
-	if (res & 2 == 1){
-		ata_release();
-		return (uint8_t) -1;
-	}
-	res = read_port(ATA_CMD + bus);
-	while (res & (1 << 7) >> 7 == 1)
-		res = read_port(ATA_CMD + bus);
-	while (res & (1 << 3) >> 3 == 0)
-		res = read_port(ATA_CMD + bus);
-
-//	if (ata_schedule(bus) == 1) {
-//		return (uint8_t) -1;
-//	}
-//
-	atapi_packet[9] = (uint8_t) count;
-
-	for (int i=0;i<6;i++){
-		write_port_w(ATA_DATA + bus,atapi_packet[i] | (atapi_packet[i+1] << 8));
-	}
-
-	if (ata_schedule(bus) == 1) {
-		ata_release();
-		return (uint8_t) -1;
-	}
-	
-	int lba_hi = read_port(ATA_LBA_HI + bus);
-	int lba_mid = read_port(ATA_LBA_MID + bus);
-	ata_select_delay(bus);
-
-	for (int i = 0;i < ((lba_hi << 8) | lba_mid) / 2;i++){
-		
-		buffer[i] = read_port_w(ATA_DATA + bus);
-	}
-	// while ((res = read_port(ATA_CMD + bus)) & 0x88);
-	ata_release();
-	return 1;
-}
 
 void ata_select_delay(uint16_t bus){
 	read_port(ATA_CMD + bus);
@@ -290,7 +241,59 @@ uint32_t atapi_get_sector_count(uint16_t bus,uint8_t drive){
 	
 }
 
-int ata_read(struct ata_device *atad,uint16_t *buffer,int LBA,int count){
+uint8_t atapi_read(struct ata_device *atad, uint16_t *buffer, int LBA, int count) {
+	ata_grab();
+	uint16_t bus = atad->bus;
+	uint8_t drive = atad->drive;
+	uint32_t sector_size = atad->sector_size;
+	uint8_t atapi_packet[12] = {0xA8,0,0,0,0,0,0,0,0,0,0,0};
+	write_port(ATA_DRIVE + bus, (uint8_t) (0xA0 + drive));
+	ata_select_delay(bus);
+	write_port(ATA_INFO + bus,0);
+
+	write_port(ATA_LBA_MID + bus, (uint8_t) (sector_size * count & 0xff));
+	write_port(ATA_LBA_HI + bus, (uint8_t) (sector_size * count >> 8 & 0xff));
+	write_port(ATA_CMD + bus, 0xA0);
+	int res = read_port(ATA_CMD + bus);
+	if (res & 2 == 1){
+		ata_release();
+		return (uint8_t) -1;
+	}
+	res = read_port(ATA_CMD + bus);
+	while (res & (1 << 7) >> 7 == 1)
+		res = read_port(ATA_CMD + bus);
+	while (res & (1 << 3) >> 3 == 0)
+		res = read_port(ATA_CMD + bus);
+
+//	if (ata_schedule(bus) == 1) {
+//		return (uint8_t) -1;
+//	}
+//
+	atapi_packet[9] = (uint8_t) count;
+
+	for (int i=0;i<6;i++){
+		write_port_w(ATA_DATA + bus,atapi_packet[i] | (atapi_packet[i+1] << 8));
+	}
+
+	if (ata_schedule(bus) == 1) {
+		ata_release();
+		return (uint8_t) -1;
+	}
+
+	int lba_hi = read_port(ATA_LBA_HI + bus);
+	int lba_mid = read_port(ATA_LBA_MID + bus);
+	ata_select_delay(bus);
+
+	for (int i = 0;i < ((lba_hi << 8) | lba_mid) / 2;i++){
+
+		buffer[i] = read_port_w(ATA_DATA + bus);
+	}
+	// while ((res = read_port(ATA_CMD + bus)) & 0x88);
+	ata_release();
+	return 1;
+}
+
+uint8_t ata_read(struct ata_device *atad, uint16_t *buffer, int LBA, int count){
     if (atad->type == ATAPI)
         return atapi_read(atad, buffer, LBA, count);
 	ata_grab();
@@ -325,12 +328,70 @@ int ata_read(struct ata_device *atad,uint16_t *buffer,int LBA,int count){
         }
         ata_select_delay(bus);
     }
+    if (ata_schedule(bus) == 1) {
+//
+		return ATA_ERR;
+	}
+    // cache flush
+    write_port(ATA_CMD + bus, 0x37);
+    ata_release();
     return 0;
 }
+
+int ata_write(struct ata_device *atad,uint16_t *buffer,int LBA,int count){
+	if (atad->type == ATAPI)
+		return atapi_write(atad, buffer, LBA, count);
+	ata_grab();
+	uint16_t bus = atad->bus;
+	uint8_t drive = atad->drive;
+	write_port(ATA_DRIVE + bus, (uint8_t) ((0xE0 + drive) | (LBA >> 24)));
+	ata_select_delay(bus);
+	write_port(ATA_LBA_LOW + bus,(uint8_t) LBA);
+	write_port(ATA_LBA_MID + bus, (uint8_t) (LBA >> 8));
+	write_port(ATA_LBA_HI + bus, (uint8_t) (LBA >> 16));
+	write_port(ATA_SECTOR_COUNT + bus, (uint8_t) count);
+	write_port(ATA_CMD + bus, 0x30);
+	int res;
+	ata_select_delay(bus);
+	res = read_port(ATA_CMD + bus);
+	if (res & 2 == 1){
+		ata_release();
+		return (uint8_t) -1;
+	}
+	res = read_port(ATA_CMD + bus);
+	while (res & (1 << 7) >> 7 == 1)
+		res = read_port(ATA_CMD + bus);
+	while (res & (1 << 3) >> 3 == 0)
+		res = read_port(ATA_CMD + bus);
+//    if (ata_schedule(bus) == 1) {
+//
+//		return ATA_ERR;
+//	}
+	for (int j=0;j<count;j++){
+		for (int k=0;k<256;k++){
+			write_port_w(ATA_DATA + bus, buffer[j*256 + k]);
+		}
+		ata_select_delay(bus);
+	}
+    if (ata_schedule(bus) == 1) {
+//
+        return ATA_ERR;
+    }
+    // cache flush
+    write_port(ATA_CMD + bus, 0x37);
+    ata_release();
+	return 0;
+}
+
+int atapi_write(struct ata_device *pDevice, uint16_t *pInt, int lba, int count) {
+    return 0;
+}
+
 void ata_init(void){
 	irq_install_handler(14,ata_irq);
 	irq_install_handler(15,ata_irq);
 	uint16_t a[2048];
+	uint16_t b[2048];
     ata_ide_devices[0].bus = ATA_PRI;
     ata_ide_devices[0].drive = ATA_MASTER;
     ata_ide_devices[1].bus = ATA_PRI;
@@ -396,8 +457,11 @@ void ata_init(void){
         printk(ata_ide_devices[3].frim_rev);
         printk("\n");
     }
+    ata_read(&ata_ide_devices[1], a,0,1);
+    a[255] = 0x55AA;
+    ata_write(&ata_ide_devices[1], a, 0, 1);
+    ata_read(&ata_ide_devices[1], b,0,1);
 
-	 ata_read(&ata_ide_devices[0], a,0,1);
-	 printk("%X ",a[255]);
+    printk("%X ",b[255]);
 
 }

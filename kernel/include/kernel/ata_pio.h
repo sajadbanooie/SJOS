@@ -18,5 +18,6 @@ struct ata_device{
 struct ata_device ata_ide_devices[4];
 uint8_t number_of_devices;
 void ata_init(void);
+uint8_t ata_read(struct ata_device *atad,uint16_t *buffer,int LBA,int count);
 
 #endif

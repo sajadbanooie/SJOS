@@ -15,6 +15,7 @@
 #include <kernel/ata_pio.h>
 #include <kernel/paging.h>
 #include <kernel/pci.h>
+#include <kernel/acpi.h>
 
 
 void keyboard_handler(struct regs *r)
@@ -44,10 +45,12 @@ void kernel_early(multiboot_info_t *multiboot_info)
 void kernel_main(void)
 {
 	ata_init();
+    init_acpi();
 	init_pci();
 //	 switch_to_usermode();
 	// alloc_blocks(2);
 	// void *a = alloc_blocks(1024);
 	// printk("%X",a);
+
 	for (;;);
 }

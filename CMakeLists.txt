@@ -40,7 +40,7 @@ set(SOURCE_FILES
     libc/string/memcpy.c
     libc/string/memmove.c
     libc/string/memset.c
-    libc/string/strlen.c kernel/kernel/dma.c kernel/include/kernel/dma.h)
+    libc/string/strlen.c kernel/kernel/dma.c kernel/include/kernel/dma.h kernel/include/kernel/acpi.h kernel/kernel/acpi.c)
 
 include_directories(.)
 include_directories(kernel/include)

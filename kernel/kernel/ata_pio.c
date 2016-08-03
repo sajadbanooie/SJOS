@@ -78,7 +78,7 @@ void ata_IDENTIFY(struct ata_device *atad){
     write_port(ATA_LBA_LOW + bus, 0x00);
     write_port(ATA_CMD + bus, 0xEC);
     int res = read_port(ATA_CMD + bus);
-	if (res & 2 == 1){
+	if ((res & 2) >> 2 == 1){
 		atad->type = ATAPI;
 	}
     if (res == 0){
@@ -92,12 +92,11 @@ void ata_IDENTIFY(struct ata_device *atad){
 	// while (res & (1 << 3) >> 3 == 0)
 	// 	res = read_port(ATA_CMD + bus);
 	if (ata_schedule((uint8_t) bus) == 1) {
-
-		atad->status = ATA_ERR;
+        atad->status = ATA_ERR;
 		ata_release();
 		return;
 	}
-    res = read_port(ATA_CMD + bus);
+//    res = read_port(ATA_CMD + bus);
 	int lba_hi = read_port(ATA_LBA_HI + bus);
 	int lba_mid = read_port(ATA_LBA_MID + bus);
     if ((lba_hi ==0) && (lba_mid ==0))
@@ -114,15 +113,15 @@ void ata_IDENTIFY(struct ata_device *atad){
         return ;
 	}
     res = read_port(ATA_CMD + bus);
-    while (res & (1 << 3) == 0)
+    while ((res & (1 << 3)) >> 3 == 0)
         res = read_port(ATA_CMD + bus);
     res = read_port(ATA_CMD + bus);
-    if (res & 2 == 1){
+    if (((res & 2) >> 1 == 1) & (atad->type != ATAPI)){
 
-				atad->status = ATA_ERR;
-				ata_release();
-				return;
-	
+        atad->status = ATA_ERR;
+        ata_release();
+        return;
+
 	}
 	
     for(int i=0;i<256;i++){
@@ -177,20 +176,15 @@ uint32_t atapi_get_sector_size(uint16_t bus, uint8_t drive){
 	write_port(ATA_LBA_MID + bus, 8);
 	write_port(ATA_LBA_HI + bus, 0);
 	write_port(ATA_CMD + bus, 0xA0);
-	
-	int res = read_port(ATA_CMD + bus);
-	if (res & 2 == 1){
-		ata_release();
-		return (uint32_t) -1;
-	}
+
 	for (int i=0;i<6;i++){
 		write_port_w(ATA_DATA + bus,atapi_packet[i] | (atapi_packet[i+1] << 8));
 	}
-	// if (ata_schedule(bus) == 1) {
-	// 	ata_release();
-	// 	return 0;
-	// }
 
+    if (ata_schedule(bus) == 1) {
+        ata_release();
+        return 0;
+    }
 	int lba_hi = read_port(ATA_LBA_HI + bus);
 	int lba_mid = read_port(ATA_LBA_MID + bus);
 	uint16_t ret[4];
@@ -200,7 +194,7 @@ uint32_t atapi_get_sector_size(uint16_t bus, uint8_t drive){
 	}
 	// while ((res = read_port(ATA_CMD + bus)) & 0x88);
 	ata_release();
-	return (uint32_t) (((ret[3] | (ret[2] << 16))) * 512);
+	return (uint32_t) (((ret[3] | (ret[2] << 16))));
 	
 }
 
@@ -213,21 +207,16 @@ uint32_t atapi_get_sector_count(uint16_t bus,uint8_t drive){
 	write_port(ATA_LBA_MID + bus, 8);
 	write_port(ATA_LBA_HI + bus, 0);
 	write_port(ATA_CMD + bus, 0xA0);
-	
-	int res = read_port(ATA_CMD + bus);
-	if (res & 2 == 1){
-		ata_release();
-		return (uint32_t) -1;
-	}
+
 
 	for (int i=0;i<6;i++){
 		write_port_w(ATA_DATA + bus,atapi_packet[i] | (atapi_packet[i+1] << 8));
 	}
 
-	// if (ata_schedule(bus) == 1) {
-	// 	ata_release();
-	// 	return 0;
-	// }
+    if (ata_schedule(bus) == 1) {
+        ata_release();
+        return 0;
+    }
 
 	int lba_hi = read_port(ATA_LBA_HI + bus);
 	int lba_mid = read_port(ATA_LBA_MID + bus);
@@ -255,14 +244,14 @@ uint8_t atapi_read(struct ata_device *atad, uint16_t *buffer, int LBA, int count
 	write_port(ATA_LBA_HI + bus, (uint8_t) (sector_size * count >> 8 & 0xff));
 	write_port(ATA_CMD + bus, 0xA0);
 	int res = read_port(ATA_CMD + bus);
-	if (res & 2 == 1){
+	if ((res & 2 ) >> 1== 1){
 		ata_release();
 		return (uint8_t) -1;
 	}
 	res = read_port(ATA_CMD + bus);
-	while (res & (1 << 7) >> 7 == 1)
+	while ((res & (1 << 7)) >> 7 == 1)
 		res = read_port(ATA_CMD + bus);
-	while (res & (1 << 3) >> 3 == 0)
+	while ((res & (1 << 3)) >> 3 == 0)
 		res = read_port(ATA_CMD + bus);
 
 //	if (ata_schedule(bus) == 1) {
@@ -289,7 +278,13 @@ uint8_t atapi_read(struct ata_device *atad, uint16_t *buffer, int LBA, int count
 		buffer[i] = read_port_w(ATA_DATA + bus);
 	}
 	// while ((res = read_port(ATA_CMD + bus)) & 0x88);
-	ata_release();
+    if (ata_schedule(bus) == 1) {
+//
+        return ATA_ERR;
+    }
+    // cache flush
+    write_port(ATA_CMD + bus, 0x37);
+    ata_release();
 	return 1;
 }
 
@@ -309,14 +304,14 @@ uint8_t ata_read(struct ata_device *atad, uint16_t *buffer, int LBA, int count){
     int res;
     ata_select_delay(bus);
     res = read_port(ATA_CMD + bus);
-    if (res & 2 == 1){
+    if ((res & 2) >> 1 == 1){
         ata_release();
         return (uint8_t) -1;
     }
     res = read_port(ATA_CMD + bus);
-    while (res & (1 << 7) >> 7 == 1)
+    while ((res & (1 << 7)) >> 7 == 1)
         res = read_port(ATA_CMD + bus);
-    while (res & (1 << 3) >> 3 == 0)
+    while ((res & (1 << 3)) >> 3 == 0)
         res = read_port(ATA_CMD + bus);
 //    if (ata_schedule(bus) == 1) {
 //
@@ -354,14 +349,14 @@ int ata_write(struct ata_device *atad,uint16_t *buffer,int LBA,int count){
 	int res;
 	ata_select_delay(bus);
 	res = read_port(ATA_CMD + bus);
-	if (res & 2 == 1){
+	if (res != 0){
 		ata_release();
 		return (uint8_t) -1;
 	}
 	res = read_port(ATA_CMD + bus);
-	while (res & (1 << 7) >> 7 == 1)
+	while (res != 0)
 		res = read_port(ATA_CMD + bus);
-	while (res & (1 << 3) >> 3 == 0)
+	while ((res & (1 << 3)) >> 3 == 0)
 		res = read_port(ATA_CMD + bus);
 //    if (ata_schedule(bus) == 1) {
 //
@@ -383,11 +378,13 @@ int ata_write(struct ata_device *atad,uint16_t *buffer,int LBA,int count){
 	return 0;
 }
 
-int atapi_write(struct ata_device *pDevice, uint16_t *pInt, int lba, int count) {
+int atapi_write(struct ata_device *atad, uint16_t *buffer, int lba, int count) {
+
     return 0;
 }
 
 void ata_init(void){
+    log_info("ATA DEVICE INIT\n", "ATA");
 	irq_install_handler(14,ata_irq);
 	irq_install_handler(15,ata_irq);
 	uint16_t a[2048];
@@ -457,11 +454,12 @@ void ata_init(void){
         printk(ata_ide_devices[3].frim_rev);
         printk("\n");
     }
-    ata_read(&ata_ide_devices[1], a,0,1);
-    a[255] = 0x55AA;
-    ata_write(&ata_ide_devices[1], a, 0, 1);
-    ata_read(&ata_ide_devices[1], b,0,1);
-
-    printk("%X ",b[255]);
-
+    //ata test
+//    ata_read(&ata_ide_devices[1], a,0,1);
+//    a[255] = 0x55AA;
+//    ata_write(&ata_ide_devices[1], a, 0, 1);
+//    ata_read(&ata_ide_devices[1], b,0,1);
+//
+//    printk("%X ",b[255]);
+    ok();
 }

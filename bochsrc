@@ -1,7 +1,7 @@
 
 # CD-ROM image
 ata0-slave: type=disk, path=sjos.iso, mode=flat
-ata0-master:  type=cdrom, path="sjos.iso", status=inserted
+ata0-master:  type=cdrom, path="/media/simulation/ADATA HD710/ubuntu-15.04-desktop-amd64(www.shatelland.com).iso", status=inserted
 boot: disk
  log: bochsout.txt
 display_library: x, options="gui_debug"

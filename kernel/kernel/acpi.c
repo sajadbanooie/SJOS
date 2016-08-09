@@ -20,12 +20,12 @@ uint8_t init_rsdp(){
     char *address;
     for (address = (char *) ROM_A; address <= (char *) ROM_A_END; address += 8){
         if (!memcmp(address, "RSD PTR ", 8)){
-            break;
+            printk("Found ACPI RSDP table at %X\n",address);
+            printk("ACPI rev is %d\n",*(address + 16));
         }
     }
     ok();
-    printk("Found ACPI RSDP table at %X\n",address);
-    printk("ACPI rev is %d\n",*(address + 16));
+
     memcpy(&rsdp,address, sizeof(rsdp));
     return 0;
 }

@@ -44,9 +44,10 @@ void kernel_early(multiboot_info_t *multiboot_info)
 
 void kernel_main(void)
 {
+    init_pci();
 	ata_init();
     init_acpi();
-	init_pci();
+    acpi_reboot();
 //	 switch_to_usermode();
 	// alloc_blocks(2);
 	// void *a = alloc_blocks(1024);

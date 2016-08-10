@@ -20,7 +20,7 @@ uint32_t pci_config_read_dword (uint8_t bus, uint8_t device,uint8_t func, uint8_
 }
 
 void init_pci(void){
-    for (int i = 0;i<32;i++)
-        printk("%X ",pci_config_read_dword(1,i,0,8));
+//    for (int i = 0;i<32;i++)
+//        printk("%X ",pci_config_read_dword(0,i,0,8));
 }
 

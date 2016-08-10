@@ -23,7 +23,7 @@ void init_virtual_memory(uint32_t kernel_end){
         p_dir[i] |= 0x2;
         p_dir[i] |= 1;
     }
-    for (int i = 0;i <=kernel_end;i++){
+    for (int i = 0;i <=0x3ff0000;i++){
         map_page(i,i);
     }
     set_page_dir();

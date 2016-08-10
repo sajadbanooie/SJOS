@@ -78,6 +78,9 @@ uint8_t ata_poll(uint16_t bus){
 	uint8_t res = read_port(bus + ATA_CMD);
     while (((res & 0x80) >> 7 == 1) && ((res & 0x4) >> 3 == 0)){
         res = read_port(bus + ATA_CMD);
+        if ((res & 0x1)){
+            return ide_error(bus,res);
+        }
     }
     res = read_port(bus + ATA_CMD);
     if ((res & 0x1)){
@@ -101,28 +104,21 @@ void ata_IDENTIFY(struct ata_device *atad){
 	uint8_t drive = atad->drive;
 	write_port(ATA_INFO + bus, 0);
     write_port(ATA_DRIVE + bus, (uint8_t) (0xA0 + drive));
-	ata_select_delay(bus);
+
     write_port(ATA_SECTOR_COUNT + bus, 0x00);
     write_port(ATA_LBA_HI + bus, 0x00);
     write_port(ATA_LBA_MID + bus, 0x00);
     write_port(ATA_LBA_LOW + bus, 0x00);
     write_port(ATA_CMD + bus, 0xEC);
-
+    ata_select_delay(bus);
     uint8_t res = read_port(ATA_CMD + bus);
 
     if (res == 0){
         atad->status = ATA_DRIVE_NOT_EXIST;
 		return ;
 	}
-    uint8_t err = ata_poll(bus);
-    if(err != 0){
-        if(err == ATA_ER_DF)
-            atad->type = ATAPI;
-        else{
-            atad->status = err;
-            return;
-        }
-    }
+    ata_poll(bus);
+
 	int lba_hi = read_port(ATA_LBA_HI + bus);
 	int lba_mid = read_port(ATA_LBA_MID + bus);
     if ((lba_hi ==0) && (lba_mid ==0))
@@ -137,12 +133,8 @@ void ata_IDENTIFY(struct ata_device *atad){
 		atad->status = ATA_DEVICE_IS_NOT_ATA;
         return ;
 	}
-    err = ata_poll(bus);
-    if(err != 0 && (atad->type != ATAPI)){
-        atad->status = err;
-        return;
-    }
-	
+    ata_poll(bus);
+
     for(int i=0;i<256;i++){
         identify.identify_w[i] = read_port_w(ATA_DATA + bus);
     }
@@ -169,6 +161,7 @@ void ata_IDENTIFY(struct ata_device *atad){
         atad->sector_size = 512;
 
         atad->status = ATA_OK;
+
         return ;
 	}
 
@@ -189,12 +182,12 @@ void ata_select_delay(uint16_t bus){
 uint32_t atapi_get_sector_size(uint16_t bus, uint8_t drive){
 	uint8_t atapi_packet[12] = {0x25,0,0,0,0,0,0,0,0,0,0,0};
 	write_port(ATA_DRIVE + bus, (uint8_t) (0xA0 + drive));
-	ata_select_delay(bus);
+
 	write_port(ATA_INFO + bus,0);
 	write_port(ATA_LBA_MID + bus, 8);
 	write_port(ATA_LBA_HI + bus, 0);
 	write_port(ATA_CMD + bus, 0xA0);
-
+    ata_select_delay(bus);
     if(ata_poll(bus) != 0){
         return 0;
     }
@@ -224,11 +217,12 @@ uint32_t atapi_get_sector_count(uint16_t bus,uint8_t drive){
 
 	uint8_t atapi_packet[12] = {0x25,0,0,0,0,0,0,0,0,0,0,0};
 	write_port(ATA_DRIVE + bus, (uint8_t) (0xA0 + drive));
-	ata_select_delay(bus);
 	write_port(ATA_INFO + bus,0);
 	write_port(ATA_LBA_MID + bus, 8);
 	write_port(ATA_LBA_HI + bus, 0);
 	write_port(ATA_CMD + bus, 0xA0);
+
+    ata_select_delay(bus);
     if(ata_poll(bus) != 0){
         return 0;
     }
@@ -237,9 +231,9 @@ uint32_t atapi_get_sector_count(uint16_t bus,uint8_t drive){
 		write_port_w(ATA_DATA + bus,atapi_packet[i] | (atapi_packet[i+1] << 8));
 	}
 
-	if (ata_schedule(bus) != 0) {
-		return 0;
-	}
+    if (ata_schedule(bus) != 0) {
+        return 0;
+    }
 	int lba_hi = read_port(ATA_LBA_HI + bus);
 	int lba_mid = read_port(ATA_LBA_MID + bus);
     if (((lba_hi << 8) | lba_mid) != 8)
@@ -248,7 +242,7 @@ uint32_t atapi_get_sector_count(uint16_t bus,uint8_t drive){
 	for (int i = 0;i < ((lba_hi << 8) | lba_mid) / 2;i++){
 		ret[i] = read_port_w(ATA_DATA + bus);
 	}
-
+    printk("ajab");
 	return (uint32_t) ((ret[1] | (ret[0] << 16)) + 1);
 }
 

@@ -16,6 +16,7 @@
 #include <kernel/paging.h>
 #include <kernel/pci.h>
 #include <kernel/acpi.h>
+#include <kernel/pit.h>
 
 
 void keyboard_handler(struct regs *r)
@@ -27,6 +28,7 @@ void keyboard_handler(struct regs *r)
 	printk("%X ", scancode);
 }
 extern uint32_t kernel_end;
+
 void kernel_early(multiboot_info_t *multiboot_info)
 {
 	terminal_initialize();
@@ -34,6 +36,7 @@ void kernel_early(multiboot_info_t *multiboot_info)
 	init_idt();
 	init_isrs();
 	init_irq();
+    init_pit();
 	init_memory_manager(multiboot_info, (uint32_t) &kernel_end);
 	init_virtual_memory((uint32_t) &kernel_end);
 
@@ -47,7 +50,6 @@ void kernel_main(void)
     init_pci();
 	ata_init();
     init_acpi();
-    acpi_reboot();
 //	 switch_to_usermode();
 	// alloc_blocks(2);
 	// void *a = alloc_blocks(1024);

@@ -10,6 +10,7 @@ cp sysroot/boot/sjos.kernel isodir/boot/sjos.kernel
 cat > isodir/boot/grub/grub.cfg << EOF
 menuentry "sjos" {
 	multiboot /boot/sjos.kernel
+	boot
 }
 EOF
 grub-mkrescue -o sjos.iso isodir

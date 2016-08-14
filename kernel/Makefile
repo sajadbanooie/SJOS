@@ -34,6 +34,8 @@ kernel/pci.o \
 kernel/ata_pio.o \
 kernel/dma.o \
 kernel/acpi.o \
+kernel/pit.o \
+
 
 
 CRTI_OBJ:=$(ARCHDIR)/crti.o

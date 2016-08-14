@@ -6,7 +6,9 @@
 
 //! page sizes are 4k
 #define PAGE_SIZE 4096
-
+#define PAGE_DIRECTORY_INDEX(x) (((x) >> 22) & 0x3ff)
+#define PAGE_TABLE_INDEX(x) (((x) >> 12) & 0x3ff)
+#define PAGE_GET_PHYSICAL_ADDRESS(x) (*x & ~0xfff)
 // typedef struct page_dir_entry_s{
 // 	uint32_t present :1;
 // 	uint32_t rw :1;
@@ -42,6 +44,8 @@
 void init_virtual_memory(uint32_t kernel_end);
 void map_page(uint32_t v,uint32_t p);
 extern set_page_dir(void);
+extern void flush_tlb_single(uint32_t);
+void flush_tlb_single(uint32_t v);
 uint32_t *p_dir;
 
 #endif

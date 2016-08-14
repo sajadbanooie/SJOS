@@ -8,10 +8,6 @@
 #include <kernel/memory.h>
 #include <kernel/portio.h>
 
-#define PAGE_DIRECTORY_INDEX(x) (((x) >> 22) & 0x3ff)
-#define PAGE_TABLE_INDEX(x) (((x) >> 12) & 0x3ff)
-#define PAGE_GET_PHYSICAL_ADDRESS(x) (*x & ~0xfff)
-
 
 void init_virtual_memory(uint32_t kernel_end){
     p_dir = (uint32_t *) alloc_block();
@@ -23,8 +19,13 @@ void init_virtual_memory(uint32_t kernel_end){
         p_dir[i] |= 0x2;
         p_dir[i] |= 1;
     }
-    for (int i = 0;i <=0x3ff0000;i++){
+    for (uint32_t i = 0;i <=(kernel_end);i += 4096){
         map_page(i,i);
+    }
+    map_page((uint32_t) p_dir, (uint32_t) p_dir);
+    for (uint32_t i = 0;i < 1024;i++){
+        uint32_t *table = (uint32_t *) ((p_dir[i] & 0xFFFFFF000)) ;
+        map_page((uint32_t) table, (uint32_t) table);
     }
     set_page_dir();
     

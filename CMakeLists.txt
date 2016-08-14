@@ -5,6 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(SOURCE_FILES
         kernel/kernel/ata_pio.c
+        kernel/kernel/pit.c
     kernel/arch/i386/gdt.c
     kernel/arch/i386/idt.c
     kernel/arch/i386/irq.c
@@ -23,6 +24,7 @@ set(SOURCE_FILES
     kernel/include/kernel/multiboot.h
     kernel/include/kernel/paging.h
     kernel/include/kernel/pci.h
+    kernel/include/kernel/pit.h
     kernel/include/kernel/portio.h
     kernel/include/kernel/tty.h
     kernel/include/kernel/user_mode.h
